@@ -51,7 +51,7 @@ class javascriptUtilities {
   }
 }
 
-const calculateMinerFee = function (RECIPIENT_COUNT, CONTRIBUTION_COUNT) {
+const calculateMinerFee = function(RECIPIENT_COUNT, CONTRIBUTION_COUNT) {
   // Aim for two satoshis per byte to get a clear margin for error and priority on fullfillment.
   const TARGET_FEE_RATE = 2;
 
@@ -72,7 +72,7 @@ const calculateMinerFee = function (RECIPIENT_COUNT, CONTRIBUTION_COUNT) {
 };
 
 // Wrap the submission function in an async function.
-const submitContribution = async function (req, res) {
+const submitContribution = async function(req, res) {
   // Get a mutex lock ready.
   const unlock = await submissionLock.acquire();
 
@@ -88,14 +88,14 @@ const submitContribution = async function (req, res) {
 
       // Get the campaign information..
       const campaign = req.app.queries.getCampaign.get({
-        campaign_id: Number(req.params["campaign_id"]),
+        campaign_id: Number(req.params["campaign_id"])
       });
 
       // If there is no matching campaign..
       if (typeof campaign === "undefined") {
         // Send an BAD REQUEST signal back to the client.
         res.status(400).json({
-          error: `Campaign (${req.params["campaign_id"]}) does not exist.`,
+          error: `Campaign (${req.params["campaign_id"]}) does not exist.`
         });
 
         // Notify the admin about the event.
@@ -111,7 +111,7 @@ const submitContribution = async function (req, res) {
       if (campaign.fullfillment_id) {
         // Send an BAD REQUEST signal back to the client.
         res.status(400).json({
-          error: `Campaign (${req.params["campaign_id"]}) has already been fullfilled.`,
+          error: `Campaign (${req.params["campaign_id"]}) has already been fullfilled.`
         });
 
         // Notify the admin about the event.
@@ -127,7 +127,7 @@ const submitContribution = async function (req, res) {
       if (moment().unix() >= campaign.expires) {
         // Send an BAD REQUEST signal back to the client.
         res.status(400).json({
-          error: `Campaign (${req.params["campaign_id"]}) has expired.`,
+          error: `Campaign (${req.params["campaign_id"]}) has expired.`
         });
 
         // Notify the admin about the event.
@@ -143,7 +143,7 @@ const submitContribution = async function (req, res) {
       if (moment().unix() < campaign.starts) {
         // Send an BAD REQUEST signal back to the client.
         res.status(400).json({
-          error: `Campaign (${req.params["campaign_id"]}) has not yet started.`,
+          error: `Campaign (${req.params["campaign_id"]}) has not yet started.`
         });
 
         // Notify the admin about the event.
@@ -160,7 +160,7 @@ const submitContribution = async function (req, res) {
 
       // Get a list of all recipients for the campaign.
       const recipients = req.app.queries.listRecipientsByCampaign.all({
-        campaign_id: Number(req.params["campaign_id"]),
+        campaign_id: Number(req.params["campaign_id"])
       });
 
       // Add each recipient as outputs.
@@ -201,7 +201,7 @@ const submitContribution = async function (req, res) {
         if (inputTransaction.code === 2) {
           // Send an "NOT FOUND" signal back to the client.
           res.status(404).json({
-            status: `The UTXO ('${currentInput.previous_output_transaction_hash}') could not be verified as unspent.`,
+            status: `The UTXO ('${currentInput.previous_output_transaction_hash}') could not be verified as unspent.`
           });
 
           // Notify the admin about the event.
@@ -239,15 +239,14 @@ const submitContribution = async function (req, res) {
 
         // Locate the UTXO in the list of unspent transaction outputs.
         const inputUTXO = inputUTXOs.find(
-          (utxo) =>
-            utxo.tx_hash === currentInput.previous_output_transaction_hash
+          utxo => utxo.tx_hash === currentInput.previous_output_transaction_hash
         );
 
         // Verify that we can find the UTXO.
         if (typeof inputUTXO === "undefined") {
           // Send an "NOT FOUND" signal back to the client.
           res.status(404).json({
-            status: `The UTXO ('${currentInput.previous_output_transaction_hash}') could not be verified as unspent.`,
+            status: `The UTXO ('${currentInput.previous_output_transaction_hash}') could not be verified as unspent.`
           });
 
           // Notify the admin about the event.
@@ -317,7 +316,7 @@ const submitContribution = async function (req, res) {
           previous_transaction_index: currentInput.previous_output_index,
           unlock_script: Buffer.from(currentInput.unlocking_script, "hex"),
           sequence_number: 0xffffffff,
-          satoshis: inputUTXO.value,
+          satoshis: inputUTXO.value
         });
 
         // If we have not yet subscribed to this script hash..
@@ -357,13 +356,13 @@ const submitContribution = async function (req, res) {
             totalSatoshis
           )}') does not match the provided intent (${
             contributionObject.data.amount
-          }).`,
+          }).`
         });
 
         // Notify the admin about the event.
         req.app.debug.server(
           "Contribution rejection (intent amount mismatch) returned to " +
-          req.ip
+            req.ip
         );
 
         // Return false to indicate failure and stop processing.
@@ -371,7 +370,7 @@ const submitContribution = async function (req, res) {
       }
 
       // Define a helper function we need to calculate the floor.
-      const inputPercentModifier = async function (inputPercent) {
+      const inputPercentModifier = async function(inputPercent) {
         const commitmentsPerTransaction = 650;
 
         // Calculate how many % of the total fundraiser the smallest acceptable contribution is at the moment.
@@ -386,11 +385,11 @@ const submitContribution = async function (req, res) {
           (remainingValue /
             (commitmentsPerTransaction - currentContributionCount) +
             546 / SATS_PER_BCH) /
-          remainingValue;
+            remainingValue;
         const maxPercent =
           1 -
           ((currentTransactionSize + 1650 + 49) * 1.0) /
-          (remainingValue * SATS_PER_BCH);
+            (remainingValue * SATS_PER_BCH);
 
         // ...
         const minValue = Math.log(minPercent * 100);
@@ -408,7 +407,7 @@ const submitContribution = async function (req, res) {
         (contract.totalContractOutputValue +
           currentMinerFee -
           currentCommittedSatoshis) *
-        (await inputPercentModifier(0.75))
+          (await inputPercentModifier(0.75))
       );
 
       // Verify that the current contribution does not undercommit the contract floor.
@@ -417,13 +416,13 @@ const submitContribution = async function (req, res) {
         res.status(400).json({
           status: `The contribution amount ('${Math.round(
             totalSatoshis
-          )}') undercommits the current floor of (${currentFloor}) satoshis.`,
+          )}') undercommits the current floor of (${currentFloor}) satoshis.`
         });
 
         // Notify the admin about the event.
         req.app.debug.server(
           "Contribution rejection (amount undercommitment) returned to " +
-          req.ip
+            req.ip
         );
 
         // Return false to indicate failure and stop processing.
@@ -433,8 +432,8 @@ const submitContribution = async function (req, res) {
       // Calculate how far over (or under) committed this contribution makes the contract.
       const overCommitment = Math.round(
         currentCommittedSatoshis +
-        totalSatoshis -
-        (contract.totalContractOutputValue + currentMinerFee)
+          totalSatoshis -
+          (contract.totalContractOutputValue + currentMinerFee)
       );
 
       // Verify that the current contribution does not overcommit the contract.
@@ -443,7 +442,7 @@ const submitContribution = async function (req, res) {
         res.status(400).json({
           status: `The contribution amount ('${Math.round(
             totalSatoshis
-          )}') overcommits the contract by (${overCommitment}) satoshis.`,
+          )}') overcommits the contract by (${overCommitment}) satoshis.`
         });
 
         // Notify the admin about the event.
@@ -461,7 +460,7 @@ const submitContribution = async function (req, res) {
         user_image: null,
         user_alias: contributionObject.data.alias,
         user_address: null,
-        data_signature: null,
+        data_signature: null
       });
 
       // Store the contribution to the database.
@@ -470,7 +469,7 @@ const submitContribution = async function (req, res) {
           user_id: storeUserResult.lastInsertRowid,
           campaign_id: Number(req.params["campaign_id"]),
           contribution_comment: contributionObject.data.comment,
-          contribution_timestamp: moment().unix(),
+          contribution_timestamp: moment().unix()
         }
       );
 
@@ -478,7 +477,7 @@ const submitContribution = async function (req, res) {
       for (const index in newCommitments) {
         req.app.queries.linkCommitmentToContribution.run({
           commitment_id: newCommitments[index],
-          contribution_id: storeContributionResult.lastInsertRowid,
+          contribution_id: storeContributionResult.lastInsertRowid
         });
       }
 
@@ -490,14 +489,14 @@ const submitContribution = async function (req, res) {
 
       // Get the currently added contribution.
       const contributionData = req.app.queries.getContribution.get({
-        contribution_id: storeContributionResult.lastInsertRowid,
+        contribution_id: storeContributionResult.lastInsertRowid
       });
 
       // Push the contribution to the SSE stream.
-      req.app.sse.send(contributionData);
+      // req.app.sse.send(contributionData);
 
       // Set up a filter function that..
-      const filterOnCampaign = function (contribution) {
+      const filterOnCampaign = function(contribution) {
         // Return true if the contribution has not been revoced AND is from the correct campaign.
         return (
           !contribution.revocation_id &&
@@ -519,7 +518,7 @@ const submitContribution = async function (req, res) {
           previousTransactionOutputIndex: commitment.previous_transaction_index,
           unlockScript: commitment.unlock_script,
           sequenceNumber: commitment.sequence_number,
-          value: commitment.satoshis,
+          value: commitment.satoshis
         };
 
         contract.addCommitment(commitmentObject);
@@ -548,7 +547,7 @@ const submitContribution = async function (req, res) {
             const fullfillmentObject = {
               fullfillment_timestamp: moment().unix(),
               fullfillment_transaction: broadcastResult,
-              campaign_id: Number(req.params["campaign_id"]),
+              campaign_id: Number(req.params["campaign_id"])
             };
 
             // Store the fullfillment in the database.
